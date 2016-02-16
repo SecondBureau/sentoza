@@ -1,0 +1,13 @@
+GEM
+  remote: https://ruby.taobao.org/
+  specs:
+    rugged (0.23.3)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  rugged
+
+BUNDLED WITH
+   1.11.2
