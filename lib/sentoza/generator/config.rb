@@ -141,7 +141,7 @@ module Sentoza
       end
           
       def mk_config_dir
-        dir = File.dirname PATH
+        dir = File.dirname Settings::PATH
         begin
           FileUtils.mkdir_p dir
         rescue Errno::EACCES
