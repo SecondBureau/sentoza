@@ -68,5 +68,3 @@ module Sentoza
       end
   end
 end
-
-require_relative 'commands/deploy'
