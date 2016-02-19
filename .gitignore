@@ -1,0 +1,5 @@
+.ruby-version
+.ruby-gemset
+/apps
+/config/sentoza.yml
+/config/nginx_*
