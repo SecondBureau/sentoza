@@ -15,6 +15,7 @@ module Sentoza
       attr_accessor :config
       
       def initialize
+        mk_config_dir
         @config = {}
       end
       
@@ -139,6 +140,16 @@ module Sentoza
         end
       end
           
+      def mk_config_dir
+        dir = File.dirname PATH
+        begin
+          FileUtils.mkdir_p dir
+        rescue Errno::EACCES
+          puts "Permission Denied to create '#{dir}'"
+          exit 1
+        end
+      end
+      
     end
   end
 end

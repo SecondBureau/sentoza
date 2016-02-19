@@ -3,3 +3,5 @@
 /apps
 /config/sentoza.yml
 /config/nginx_*
+.bundle/
+vendor/
