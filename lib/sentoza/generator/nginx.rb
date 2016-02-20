@@ -82,8 +82,10 @@ EOT
               install_file application, stage
               if options[:enable] || @settings.stage(application, stage)[:active]
                 enable application, stage
+              else
+                disable application, stage
               end
-              #restart nginx
+              restart
             end
           end
         end
@@ -129,7 +131,6 @@ EOT
         File.join SITES_AVAILABLE, "nginx_#{application.to_s}_#{stage.to_s}"
       end
       
-      
       def install_file(application, stage)
         FileUtils.cp filename(application, stage), nginx_filename(application, stage)
       end
@@ -137,6 +138,15 @@ EOT
       def enable(application, stage)
         filename = nginx_filename(application, stage)
         FileUtils.ln_sf filename, File.join(SITES_ENABLED, File.basename(filename))
+      end
+      
+      def disable(application, stage)
+        filename = nginx_filename(application, stage)
+        FileUtils.rm File.join(SITES_ENABLED, File.basename(filename))
+      end
+      
+      def restart
+        `service nginx restart`
       end
       
       def parse_arguments(arguments)
