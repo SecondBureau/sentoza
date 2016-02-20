@@ -65,7 +65,7 @@ module Sentoza
           opts.on("-s", "--stage=STAGE", String,
                   "Stages for this application.", "Default: production staging") do |v| 
                     options[:stages] ||= []
-                    options[:stages] << v
+                    options[:stages] << v.to_sym
                   end
           opts.on("--replace", 
                   "Replace current file.", "Default: False") { |v| options[:replace] = v }

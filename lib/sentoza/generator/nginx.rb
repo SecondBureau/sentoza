@@ -63,47 +63,37 @@ server {
 
 EOT
       
-      attr_accessor :settings
-      
-      def initialize
-        init_repo
-        @settings ||= load_settings
-      end
       
       def generate(arguments)
+        init_repo
         options = parse_arguments(arguments)
         
-        applications = options[:application] ? [options[:application].to_sym] : @settings.applications
-        applications.each do |application|
-          stages = options[:stages] ? options[:stages] : @settings.stages(application)
-          stages.each do |stage| 
-            do_generate application, stage
+        applications(options).each do |application|
+          
+          stages(options, application).each do |stage| 
+            
+            nginx = self.class.new(application, stage)
+            nginx.do_generate 
+            
             unless options[:simulate]
-              install_file application, stage
+              nginx.install_file
               if options[:enable] || @settings.stage(application, stage)[:active]
-                enable application, stage
+                nginx.enable
               else
-                disable application, stage
+                nginx.disable
               end
-              restart
+              nginx.restart
             end
+            
           end
         end
       end
       
       private
       
-      def do_generate(application, stage)
+      def do_generate
         
-        if !@settings.applications.include?(application)
-          puts "Application #{application.to_s} does not exist"
-          exit 1
-        end
-        
-        if !@settings.stages(application).include?(stage)
-          puts "Stage #{stage.to_s} does not exist in application #{application.to_s}"
-          exit 1
-        end
+        exit_if_application_or_stage_doesnt_exist
 
         params = {
           app_root:  APP_ROOT,
@@ -123,24 +113,24 @@ EOT
         
       end
       
-      def filename(application, stage)
+      def filename
         File.join APP_ROOT, 'config', "nginx_#{application.to_s}_#{stage.to_s}"
       end
       
-      def nginx_filename(application, stage)
+      def nginx_filename
         File.join SITES_AVAILABLE, "nginx_#{application.to_s}_#{stage.to_s}"
       end
       
-      def install_file(application, stage)
+      def install_file
         FileUtils.cp filename(application, stage), nginx_filename(application, stage)
       end
       
-      def enable(application, stage)
+      def enable
         filename = nginx_filename(application, stage)
         FileUtils.ln_sf filename, File.join(SITES_ENABLED, File.basename(filename))
       end
       
-      def disable(application, stage)
+      def disable
         filename = nginx_filename(application, stage)
         FileUtils.rm File.join(SITES_ENABLED, File.basename(filename))
       end
@@ -159,7 +149,7 @@ EOT
           opts.on("-s", "--stage=STAGE", String,
                   "Stages for this application.", "Default: all") do |v| 
                     options[:stages] ||= []
-                    options[:stages] << v
+                    options[:stages] << v.to_sym
                   end
           opts.separator ""
           opts.on("-s", "--simulate", 
@@ -175,9 +165,6 @@ EOT
         options
       end
       
-      def applications
-        
-      end
       
       def init_repo
         begin

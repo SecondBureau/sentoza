@@ -65,9 +65,10 @@ You can also edit the `YAML` file
 
     sentoza g applications
     
-Clone repository 
-Change database.yml
-add config.puma
+* Clone repository 
+* generate database.yml
+* generate puma.rb
+* Symlinks current
 
     
 
