@@ -179,10 +179,6 @@ EOT
         
       end
       
-      def load_settings
-        Settings.new
-      end
-      
       def init_repo
         begin
           FileUtils.mkdir_p SITES_AVAILABLE

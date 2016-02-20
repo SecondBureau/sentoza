@@ -61,6 +61,15 @@ You can also edit the `YAML` file
         	  hostname:
         	  port:
         
+### Rails App
+
+    sentoza g applications
+    
+Clone repository 
+Change database.yml
+add config.puma
+
+    
 
 ### NGinx Vhosts
 

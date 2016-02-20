@@ -1,3 +1,5 @@
+require_relative '../settings'
+
 module Sentoza
   module Generator
     class Base
@@ -10,6 +12,11 @@ module Sentoza
         return default unless (options && options.is_a?(Hash) && option_name && option_name.is_a?(Symbol))
         options.include?(option_name) ? options[option_name] : default
       end
+      
+      def load_settings
+        Settings.new
+      end
+      
     end
   end
 end
