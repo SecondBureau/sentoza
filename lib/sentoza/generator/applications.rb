@@ -1,4 +1,5 @@
 require_relative 'base'
+require 'securerandom'
 
 module Sentoza
   module Generator
@@ -65,7 +66,6 @@ BUNDLE_DISABLED_SHARED_GEMS: '1'
 BUNDLE_WITHOUT: heroku
 
 EOT
-
       
       APPS_PATH = 'apps'
       SHARED_PATH = '../shared' # relative to rails application root
@@ -156,7 +156,6 @@ private
       def mk_bundle_config
         @appl_bundle_path   = File.join(app_root, '.bundle', 'config')
         @shared_bundle_path = File.join(shared_dir, "bundle.config")
-        FileUtils.mkdir_p appl_bundle_path
         File.open(shared_bundle_path,"w") do |file|
           file.write BUNDLE_TPL
         end

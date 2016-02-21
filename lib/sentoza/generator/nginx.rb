@@ -1,30 +1,3 @@
-# upstream app {
-#     # Path to Puma SOCK file, as defined in app/config/puma.rb
-#     server unix:/home/deploy/charbon/shared/sockets/puma.sock fail_timeout=0;
-# }
-#
-# server {
-#     listen 80;
-#     server_name localhost;
-#
-#     root /home/deploy/charbon;
-#
-#     try_files $uri/index.html $uri @app;
-#
-#     location @app {
-#         proxy_pass http://app;
-#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-#         proxy_set_header Host $http_host;
-#         proxy_redirect off;
-#     }
-#
-#     error_page 500 502 503 504 /500.html;
-#     client_max_body_size 4G;
-#     keepalive_timeout 10;
-# }
-
-
-
 require_relative 'base'
 require_relative '../settings'
 
@@ -36,7 +9,7 @@ module Sentoza
       SITES_ENABLED   = "/etc/nginx/sites-enabled"
       
       TEMPLATE = <<-EOT
-upstream app {
+upstream {{APPLICATION}}_{{STAGE}} {
   # Path to Puma SOCK file, as defined in app/config/puma.rb
   server unix: {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/sockets/puma.sock fail_timeout=0;
 }
@@ -47,10 +20,10 @@ server {
 
   root {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/current;
 
-  try_files $uri/index.html $uri @app;
+  try_files $uri/index.html $uri @{{APPLICATION}}_{{STAGE}};
 
-  location @app {
-      proxy_pass http://app;
+  location @{{APPLICATION}}_{{STAGE}} {
+      proxy_pass http://{{APPLICATION}}_{{STAGE}};
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header Host $http_host;
       proxy_redirect off;

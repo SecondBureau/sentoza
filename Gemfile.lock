@@ -1,10 +1,12 @@
 GEM
   remote: https://ruby.taobao.org/
   specs:
+    colorize (0.7.7)
     rugged (0.23.3)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  colorize
   rugged

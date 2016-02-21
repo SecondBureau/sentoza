@@ -1,14 +1,16 @@
 require_relative '../settings'
+require_relative '../logger'
 
 module Sentoza
   module Generator
     class Base
       
-      attr_accessor :settings, :application, :stage
+      attr_accessor :settings, :application, :stage, :log
       
       def initialize(application=nil, stage=nil)
         @application  = application
         @stage        = stage
+        @log          = Logger.new
       end
       
       def settings
