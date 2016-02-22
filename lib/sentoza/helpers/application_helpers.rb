@@ -147,7 +147,7 @@ module Sentoza
       log.info "Bundler update", true
       begin
         Dir.chdir(current_root) do
-          `bundle install`
+          Bundler.clean_system('bundle install')
         end
         log.result :done
       rescue Exception => e
@@ -160,7 +160,7 @@ module Sentoza
       log.info "Precompile assets", true
       begin
         Dir.chdir(current_root) do
-          `bundle exec rake assets:precompile`
+          Bundler.clean_system('bundle exec rake assets:precompile')
         end
         log.result :done
       rescue Exception => e
