@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Sentoza
   # This is a class which takes in a Senotza command and initiates the appropriate
   # initiation sequence.
@@ -49,6 +51,8 @@ EOT
 
     def deploy
       require_command!("deploy")
+      shift_argv!
+      Sentoza::Deploy.run argv
     end
 
     def test

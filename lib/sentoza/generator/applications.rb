@@ -1,9 +1,12 @@
 require_relative 'base'
 require 'securerandom'
+require_relative '../helpers/application_helpers'
 
 module Sentoza
   module Generator
     class Applications < Sentoza::Generator::Base
+      
+      include ApplicationHelpers
       
       DATABASE_TPL = <<-EOT      
 default: &default
@@ -67,13 +70,13 @@ BUNDLE_WITHOUT: heroku
 
 EOT
       
-      APPS_PATH = 'apps'
-      SHARED_PATH = '../shared' # relative to rails application root
-            
-      attr_accessor :repo, :app_root, :shared_dir
-      attr_accessor :appl_db_config_path, :shared_db_config_path
-      attr_accessor :appl_puma_path, :shared_puma_path
-      attr_accessor :appl_bundle_path, :shared_bundle_path
+      
+      PUMA_CONF_PATH  = '/etc/puma.conf'
+      
+      def initialize(application=nil, stage=nil)
+        super
+        @restart = false
+      end
       
       def install(arguments)
         options = parse_arguments(arguments)
@@ -87,90 +90,137 @@ EOT
       def do_install
         exit_if_application_or_stage_doesnt_exist
         clone
+        FileUtils.mkdir_p stage_path
+        checkout
         copy_tree
         init_shared_dir
         mk_database_config
         mk_puma_config
         mk_bundle_config
+        mk_rbenv_vars
+        add_puma_conf
         update_links
+        restart_puma_manager
       end
       
 private
             
       def clone
-        path = File.join(APP_ROOT, APPS_PATH, application.to_s, 'src')
-        unless File.exist? path
-          github_repository = settings.github(application)[:repository]
-          Rugged::Repository.clone_at("https://github.com/#{github_repository}", path, {
+        github_repository = settings.github(application)[:repository]
+        log.info "Cloning '#{github_repository}'..."
+        unless File.exist? clone_path
+          Rugged::Repository.clone_at("https://github.com/#{github_repository}", clone_path, {
             transfer_progress: lambda { |total_objects, indexed_objects, received_objects, local_objects, total_deltas, indexed_deltas, received_bytes|
             print "#{received_objects} / #{total_objects} objects \r"
             }
           })
+          log.info ["'#{github_repository}' cloned", :done]
+        else
+          log.warning ["'#{github_repository}' already exists in '#{clone_path}'", :skipped]
         end
-        @repo = Rugged::Repository.new(path)
-      end
-      
-      def copy_tree
-        # make stage dir
-        stage_path = File.join(APP_ROOT, APPS_PATH, application.to_s, stage.to_s)
-        FileUtils.mkdir_p stage_path
-
-        # checkout branch
-        branch = settings.stage(application, stage)[:branch]
-        repo.checkout(branch)
-        oid = repo.rev_parse_oid('HEAD')
-        revision = oid[0,7]
-        
-        # copy
-        repo_root = File.dirname(@repo.path)
-        @app_root = File.join(stage_path, revision)
-        FileUtils.rm_rf app_root
-        FileUtils.cp_r repo_root, app_root 
-        FileUtils.rm_r("#{app_root}/.git", :force => true)
       end
       
       def init_shared_dir
-        shared_dir = File.join(app_root, SHARED_PATH)
-        FileUtils.mkdir_p shared_dir
-        @shared_dir = File.expand_path shared_dir
+        log.info "Create shared directory", true
+        begin
+          FileUtils.mkdir_p File.join(app_root, SHARED_PATH)
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
       def mk_database_config
-        filename = 'database.yml'
-        @appl_db_config_path   = File.join(app_root, 'config', filename)
-        @shared_db_config_path = File.join(shared_dir, filename)
-        File.open(shared_db_config_path,"w") do |file|
-          file.write DATABASE_TPL
+        log.info "Make database config", true
+        begin
+          File.open(shared_db_config_path,"w") do |file|
+            file.write DATABASE_TPL
+          end
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
         end
       end
       
       def mk_puma_config
-        filename = 'puma.rb'
-        @appl_puma_path   = File.join(app_root, 'config', filename)
-        @shared_puma_path = File.join(shared_dir, filename)
-        File.open(shared_puma_path,"w") do |file|
-          file.write PUMA_TPL.gsub!('{{shared_dir}}', shared_dir)
+        log.info "Make puma config", true
+        begin
+          File.open(shared_puma_path,"w") do |file|
+            file.write PUMA_TPL.gsub!('{{shared_dir}}', shared_dir)
+          end
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
         end
       end
       
       def mk_bundle_config
-        @appl_bundle_path   = File.join(app_root, '.bundle', 'config')
-        @shared_bundle_path = File.join(shared_dir, "bundle.config")
-        File.open(shared_bundle_path,"w") do |file|
-          file.write BUNDLE_TPL
+        log.info "Make bundle config", true
+        begin
+          File.open(shared_bundle_path,"w") do |file|
+            file.write BUNDLE_TPL
+          end
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
         end
       end
       
-      def update_links
-        ln shared_db_config_path, appl_db_config_path
-        ln shared_puma_path, appl_puma_path
-        ln shared_bundle_path, appl_bundle_path
-        ln app_root, File.join(APP_ROOT, APPS_PATH, application.to_s, stage.to_s, 'current')
+      def mk_rbenv_vars
+        log.info "Make rbenv vars ", true
+        begin
+          db=settings.db(application, stage)
+          File.open(shared_rbenv_vars_path,"w") do |file|
+            file.puts "DB_NAME=#{db[:name]}"
+            file.puts "DB_USERNAME=#{db[:username]}"
+            file.puts "DB_PASSWORD=#{db[:password]}"
+            file.puts "DB_HOSTNAME=#{db[:hostname]}"
+            file.puts "DB_PORT=#{db[:port]}"
+            file.puts "SECRET_KEY_BASE=#{SecureRandom.hex(64)}"
+            file.puts "RAILS_ENV=production"
+            file.puts "RAILS_SERVE_STATIC_FILES=true"
+          end
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
-      def ln(target, source)
-        FileUtils.rm_f source
-        FileUtils.ln_sf Pathname.new(target).relative_path_from(Pathname.new(File.dirname(source))).to_s, source
+      def add_puma_conf
+        log.info "Checking Puma Manager configuration", true
+        begin
+          if !File.exist?(PUMA_CONF_PATH)
+            log.result :failed
+            log.error "Puma manager application list '#{PUMA_CONF_PATH}' is missing."
+            return
+          end
+          found = false 
+          File.read(PUMA_CONF_PATH).each_line do |line|
+            if line.chop!.eql?(current_root)
+              found = true
+              break
+            end
+          end
+          unless found
+            begin
+              File.open(PUMA_CONF_PATH,"a") do |file|
+                file.puts current_root
+              end
+              @restart = true
+            rescue Errno::EACCES
+              raise "Permission denied to modify '#{PUMA_CONF_PATH}'.\n        Try to run this command with sudo.\n        Or add #{current_root} to this file.\n        And restart puma manager 'sudo restart puma-manager'"
+            end
+          end
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
       def parse_arguments(arguments)
