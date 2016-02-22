@@ -43,7 +43,7 @@ module Sentoza
     private
     
     def fetch
-      log.info "Fetching latest revision", true
+      log.info "Fetching latest revision..."
       begin
         remote = settings.github(application)[:remote]
         branch = settings.stage(application, stage)[:branch]
@@ -56,10 +56,9 @@ module Sentoza
         repo.references.update(repo.head, distant_commit.oid)
         oid = repo.rev_parse_oid('HEAD')
         @revision = oid[0,7]
-        log.result :done
+        log.info ["'#{github_repository}' updated", :done]
       rescue Exception => e
-        log.result :failed
-        log.error e.message
+        log.error ["#{e.message}", :failed]
       end
     end
 

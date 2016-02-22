@@ -1,7 +1,7 @@
 module Sentoza
   module ApplicationHelpers
     
-    APPS_PATH       = 'apps'
+    APPS_PATH       = '../apps'
     CLONE_DIR       = 'src'
     SHARED_PATH     = '../shared' # relative to rails application root
     DATABASE_CONFIG = 'database.yml'
@@ -10,8 +10,12 @@ module Sentoza
     attr_accessor :revision
     attr_accessor :restart
     
+    def apps_path
+      File.expand_path File.join(APP_ROOT, APPS_PATH)
+    end
+    
     def clone_path
-      File.join(APP_ROOT, APPS_PATH, application.to_s, CLONE_DIR)
+      File.join(apps_path, application.to_s, CLONE_DIR)
     end
     
     def repo
@@ -19,11 +23,11 @@ module Sentoza
     end
     
     def stage_path
-      File.join(APP_ROOT, APPS_PATH, application.to_s, stage.to_s)
+      File.join(apps_path, application.to_s, stage.to_s)
     end
     
     def current_root
-      @current_root ||= File.join(APP_ROOT, APPS_PATH, application.to_s, stage.to_s, 'current')
+      @current_root ||= File.join(apps_path, application.to_s, stage.to_s, 'current')
     end
     
     def repo_root
