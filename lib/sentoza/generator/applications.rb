@@ -2,6 +2,7 @@ require_relative 'base'
 require 'securerandom'
 require_relative '../helpers/application_helpers'
 
+
 module Sentoza
   module Generator
     class Applications < Sentoza::Generator::Base
@@ -73,22 +74,40 @@ EOT
       
       PUMA_CONF_PATH  = '/etc/puma.conf'
       
+      class << self
+        
+        private
+        
+        def parse_arguments(arguments)
+          options = {}
+          OptionParser.new do |opts|
+            opts.banner = "Usage: sentoza generate applications [options]"
+            opts.separator ""
+            opts.on("-a", "--application=NAME", String,
+                    "Name of the application.", "Default: all") { |v| options[:application] = v }
+            opts.on("-s", "--stage=STAGE", String,
+                    "Stages for this application.", "Default: all") do |v| 
+                      options[:stages] ||= []
+                      options[:stages] << v.to_sym
+                    end
+            opts.separator ""
+         
+            opts.on_tail("-h", "--help", "Shows this help message.") { puts opts; exit }
+          
+            opts.parse!(arguments)
+          end
+          options
+        end
+        
+      end
+      
+      
       def initialize(application=nil, stage=nil)
         super
         @restart = false
       end
       
-      def install(arguments)
-        options = parse_arguments(arguments)
-        applications(options).each do |application|
-          stages(options, application).each do |stage| 
-            self.class.new(application, stage).do_install
-          end
-        end
-      end
-      
-      def do_install
-        exit_if_application_or_stage_doesnt_exist
+      def run!(options)
         clone
         FileUtils.mkdir_p stage_path
         checkout
@@ -106,7 +125,7 @@ EOT
 private
             
       def clone
-        github_repository = settings.github(application)[:repository]
+        github_repository = application.github.repository
         log.info "Cloning '#{github_repository}'..."
         unless File.exist? clone_path
           Rugged::Repository.clone_at("https://github.com/#{github_repository}", clone_path, {
@@ -173,13 +192,12 @@ private
       def mk_rbenv_vars
         log.info "Make rbenv vars ", true
         begin
-          db=settings.db(application, stage)
           File.open(shared_rbenv_vars_path,"w") do |file|
-            file.puts "DB_NAME=#{db[:name]}"
-            file.puts "DB_USERNAME=#{db[:username]}"
-            file.puts "DB_PASSWORD=#{db[:password]}"
-            file.puts "DB_HOSTNAME=#{db[:hostname]}"
-            file.puts "DB_PORT=#{db[:port]}"
+            file.puts "DB_NAME=#{stage.db[:name]}"
+            file.puts "DB_USERNAME=#{stage.db[:username]}"
+            file.puts "DB_PASSWORD=#{stage.db[:password]}"
+            file.puts "DB_HOSTNAME=#{stage.db[:hostname]}"
+            file.puts "DB_PORT=#{stage.db[:port]}"
             file.puts "SECRET_KEY_BASE=#{SecureRandom.hex(64)}"
             file.puts "RAILS_ENV=production"
             file.puts "RAILS_SERVE_STATIC_FILES=true"
@@ -223,26 +241,7 @@ private
         end
       end
       
-      def parse_arguments(arguments)
-        options = {}
-        OptionParser.new do |opts|
-          opts.banner = "Usage: sentoza generate applications [options]"
-          opts.separator ""
-          opts.on("-a", "--application=NAME", String,
-                  "Name of the application.", "Default: all") { |v| options[:application] = v }
-          opts.on("-s", "--stage=STAGE", String,
-                  "Stages for this application.", "Default: all") do |v| 
-                    options[:stages] ||= []
-                    options[:stages] << v.to_sym
-                  end
-          opts.separator ""
-         
-          opts.on_tail("-h", "--help", "Shows this help message.") { puts opts; exit }
-          
-          opts.parse!(arguments)
-        end
-        options
-      end
+      
       
     end
   end

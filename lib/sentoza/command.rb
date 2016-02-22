@@ -1,4 +1,6 @@
 require 'optparse'
+require_relative 'logger'
+require_relative 'settings'
 require_relative 'commands/commands_tasks'
 
 module Sentoza

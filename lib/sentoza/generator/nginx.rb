@@ -1,5 +1,4 @@
 require_relative 'base'
-require_relative '../settings'
 
 module Sentoza
   module Generator
@@ -36,43 +35,81 @@ server {
 
 EOT
       
+      class << self
+              
+        private
       
-      def generate(arguments)
-        init_repo
-        options = parse_arguments(arguments)
-        
-        applications(options).each do |application|
+        def parse_arguments(arguments)
+          options = {}
+          OptionParser.new do |opts|
+            opts.banner = "Usage: sentoza generate nginx [options]"
+            opts.separator ""
+            opts.on("-a", "--application=NAME", String,
+                    "Name of the application.", "Default: all") { |v| options[:application] = v }
+            opts.on("-s", "--stage=STAGE", String,
+                    "Stages for this application.", "Default: all") do |v| 
+                      options[:stages] ||= []
+                      options[:stages] << v.to_sym
+                    end
+            opts.separator ""
+            opts.on("-s", "--simulate", 
+                    "Does not install files in /etc/nginx/sites-available/", "Default: false") { |v| options[:simulate] = v }
+            opts.on("-e", "--enable", 
+                    "enable vhost", "Default: active param") { |v| options[:enable] = v }
+            opts.separator ""
+         
+            opts.on_tail("-h", "--help", "Shows this help message.") { puts opts; exit }
           
-          stages(options, application).each do |stage| 
-            
-            nginx = self.class.new(application, stage)
-            nginx.do_generate 
-            
-            unless options[:simulate]
-              nginx.install_file
-              if options[:enable] || @settings.stage(application, stage)[:active]
-                nginx.enable
-              else
-                nginx.disable
-              end
-              nginx.restart
-            end
-            
+            opts.parse!(arguments)
           end
+          options
+        end
+        
+      end
+      
+      def run!(options)
+        init_repo unless check_repo
+        mk_config_file 
+        unless options[:simulate]
+          install_file
+          if options[:enable] || settings.stage(application, stage)[:active]
+            enable
+          else
+            disable
+          end
+          restart
         end
       end
       
+      def check_repo
+        if File.exist?(SITES_AVAILABLE) && File.exist?(SITES_ENABLED)
+          log.info ["Checked repositories '#{SITES_AVAILABLE}', '#{SITES_ENABLED}'", :done]
+          return true
+        else
+          log.warning "Repositories '#{SITES_AVAILABLE}', '#{SITES_ENABLED}' must be created"
+          return false
+        end
+      end
+    
+      def init_repo
+        log.info "Creating repositories '#{SITES_AVAILABLE}', '#{SITES_ENABLED}'", true
+        begin
+          FileUtils.mkdir_p SITES_AVAILABLE
+          FileUtils.mkdir_p SITES_ENABLED
+          log.result :done
+        rescue Errno::EACCES
+          log.result :failed
+          log.error "Permission Denied to create '#{SITES_AVAILABLE}', '#{SITES_ENABLED}'.\n   Run this command with sudo"
+        end
+      end
       
-      
-      def do_generate
-        
-        exit_if_application_or_stage_doesnt_exist
+      def mk_config_file
 
         params = {
           app_root:  APP_ROOT,
-          vhost: settings.stage(application, stage)[:vhost],
-          application: application,
-          stage: stage
+          vhost: stage.vhost,
+          application: application.name.to_s,
+          stage: stage.name.to_s
         }
 
         contents = TEMPLATE
@@ -80,77 +117,42 @@ EOT
           contents.gsub! "{{#{param.upcase}}}", params[param.to_sym].to_s
         end
         
-        File.open(filename(application, stage),"w") do |file|
+        File.open(config_path,"w") do |file|
           file.write contents
         end
         
       end
       
-      private
-      
-      def filename
-        File.join APP_ROOT, 'config', "nginx_#{application.to_s}_#{stage.to_s}"
-      end
-      
-      def nginx_filename
-        File.join SITES_AVAILABLE, "nginx_#{application.to_s}_#{stage.to_s}"
-      end
-      
       def install_file
-        FileUtils.cp filename(application, stage), nginx_filename(application, stage)
+        FileUtils.cp config_path, nginx_path
       end
       
       def enable
-        filename = nginx_filename(application, stage)
-        FileUtils.ln_sf filename, File.join(SITES_ENABLED, File.basename(filename))
+        ln nginx_path, File.join(SITES_ENABLED, filename)
       end
       
       def disable
-        filename = nginx_filename(application, stage)
-        FileUtils.rm File.join(SITES_ENABLED, File.basename(filename))
+        FileUtils.rm File.join(SITES_ENABLED, filename)
       end
       
       def restart
         `service nginx restart`
       end
       
-      def parse_arguments(arguments)
-        options = {}
-        OptionParser.new do |opts|
-          opts.banner = "Usage: sentoza generate nginx [options]"
-          opts.separator ""
-          opts.on("-a", "--application=NAME", String,
-                  "Name of the application.", "Default: all") { |v| options[:application] = v }
-          opts.on("-s", "--stage=STAGE", String,
-                  "Stages for this application.", "Default: all") do |v| 
-                    options[:stages] ||= []
-                    options[:stages] << v.to_sym
-                  end
-          opts.separator ""
-          opts.on("-s", "--simulate", 
-                  "Does not install files in /etc/nginx/sites-available/", "Default: false") { |v| options[:simulate] = v }
-          opts.on("-e", "--enable", 
-                  "enable vhost", "Default: active param") { |v| options[:enable] = v }
-          opts.separator ""
-         
-          opts.on_tail("-h", "--help", "Shows this help message.") { puts opts; exit }
-          
-          opts.parse!(arguments)
-        end
-        options
+      
+      def filename
+        "nginx_#{application.name.to_s}_#{stage.name.to_s}"
+      end
+      
+      def config_path
+        File.join config_dir, filename
+      end
+      
+      def nginx_path
+        File.join SITES_AVAILABLE, filename
       end
       
       
-      def init_repo
-        begin
-          FileUtils.mkdir_p SITES_AVAILABLE
-          FileUtils.mkdir_p SITES_ENABLED
-        rescue Errno::EACCES
-          puts "Permission Denied to create '#{SITES_AVAILABLE}', '#{SITES_ENABLED}'"
-          puts "Run this command with sudo"
-          exit 1
-        end
-      end
       
     end
   end

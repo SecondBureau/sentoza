@@ -1,20 +1,36 @@
-require_relative '../settings'
-require_relative '../logger'
+require_relative '../helpers/util_helpers'
+require_relative '../helpers/config_helpers'
 
 module Sentoza
   module Generator
     class Base
       
-      attr_accessor :settings, :application, :stage, :log
+      include UtilHelpers
+      include ConfigHelpers
       
-      def initialize(application=nil, stage=nil)
-        @application  = application
-        @stage        = stage
-        @log          = Logger.new
+      attr_accessor :application, :stage
+      
+      class << self
+        
+        def run(arguments)
+          options = parse_arguments(arguments)
+          Settings::Base.applications(options).each do |application|
+            begin
+              Settings::Base.stages(options, application).each do |stage| 
+                self.new(application, stage).run! options
+              end
+            rescue Sentoza::Settings::ApplicationNotFound => e
+              Logger.new.error e
+            end
+          end
+        end
+
       end
       
-      def settings
-        @settings ||= load_settings
+      def initialize(application=nil, stage=nil)
+        settings = Settings::Base.new
+        @application  = application.is_a?(Sentoza::Settings::Application) ? application : settings.find(application)
+        @stage = stage.is_a?(Sentoza::Settings::Stage) ? stage : @application.find(stage)
       end
        
       def default(const)
@@ -26,29 +42,7 @@ module Sentoza
         options.include?(option_name) ? options[option_name] : default
       end
       
-      def load_settings
-        Settings.new
-      end
-      
-      def exit_if_application_or_stage_doesnt_exist
-        if !settings.applications.include?(application)
-          puts "Application '#{application.to_s}' does not exist"
-          exit 1
-        end
-        if !settings.stages(application).include?(stage)
-          puts "Stage '#{stage.to_s}' does not exist in application '#{application.to_s}'"
-          exit 1
-        end
-      end
-      
-      def applications(options)
-        options[:application] ? [options[:application].to_sym] : settings.applications
-      end
-      
-      def stages(options, application)
-        options[:stages] ? options[:stages] : settings.stages(application)
-      end
-      
+  
     end
   end
 end

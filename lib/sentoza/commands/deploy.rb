@@ -1,5 +1,4 @@
 require_relative '../settings'
-require_relative '../logger'
 require_relative '../generator/applications'
 require_relative '../helpers/application_helpers'
 
@@ -8,7 +7,7 @@ module Sentoza
     
     include ApplicationHelpers
     
-    attr_accessor :settings, :application, :stage, :log
+    attr_accessor :settings, :application, :stage
     attr_accessor :previous_revision
     attr_accessor :force_build
     
@@ -20,7 +19,6 @@ module Sentoza
     def initialize(application=nil, stage=nil, force=false)
       @application  = application
       @stage        = stage
-      @log          = Logger.new
       @settings     = Settings.new
       @force_build  = force
     end
