@@ -72,7 +72,7 @@ EOT
         mk_config_file 
         unless options[:simulate]
           install_file
-          if options[:enable] || settings.stage(application, stage)[:active]
+          if options[:enable] || stage.active
             enable
           else
             disable
