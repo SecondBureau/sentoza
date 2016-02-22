@@ -56,7 +56,7 @@ module Sentoza
         repo.references.update(repo.head, distant_commit.oid)
         oid = repo.rev_parse_oid('HEAD')
         @revision = oid[0,7]
-        log.info ["'#{github_repository}' updated", :done]
+        log.info ["'#{application}' updated", :done]
       rescue Exception => e
         log.error ["#{e.message}", :failed]
       end

@@ -62,7 +62,7 @@ EOT
         end
       end
       
-      private
+      
       
       def do_generate
         
@@ -85,6 +85,8 @@ EOT
         end
         
       end
+      
+      private
       
       def filename
         File.join APP_ROOT, 'config', "nginx_#{application.to_s}_#{stage.to_s}"
