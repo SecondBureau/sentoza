@@ -7,8 +7,6 @@ module Sentoza
   module Generator
     class Applications < Sentoza::Generator::Base
       
-      include ApplicationHelpers
-      
       DATABASE_TPL = <<-EOT      
 default: &default
   adapter: postgresql

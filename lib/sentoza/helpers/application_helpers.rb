@@ -1,7 +1,29 @@
-require_relative 'util_helpers'
-
 module Sentoza
   module ApplicationHelpers
+    
+    class BundleFailed < ::StandardError
+      def message
+        '`Bundle install` command failed.'
+      end
+    end 
+    
+    class AssetsPrecompileFailed < ::StandardError
+      def message
+        'rake task `assets:precompile` failed.'
+      end
+    end 
+    
+    class DbMigrateFailed < ::StandardError
+      def message
+        'rake task `db:migrate` failed.'
+      end
+    end 
+    
+    class DeployFailed < ::StandardError
+      def message
+        'Deployment has failed. Previous revision is still active.'
+      end
+    end
     
     APPS_PATH       = 'apps'
     CLONE_DIR       = 'src'
@@ -77,6 +99,11 @@ module Sentoza
       File.join(shared_dir, "rbenv-vars")
     end
     
+    def init(application, stage)
+      settings = Settings::Base.new
+      @application  = application.is_a?(Sentoza::Settings::Application) ? application : settings.find(application)
+      @stage = stage.is_a?(Sentoza::Settings::Stage) ? stage : @application.find(stage)
+    end
     
     def checkout
       log.info "Checkout branch", true
@@ -104,6 +131,10 @@ module Sentoza
       end
     end
     
+    def rename_failed_revision
+      FileUtils.mv app_root, File.join(File.dirname(app_root), "#{File.basename(app_root)}-failed-#{Time.now.to_i}" )
+    end
+    
     def update_links
       log.info "Updating sym links", true
       begin
@@ -111,13 +142,16 @@ module Sentoza
         ln shared_db_config_path, appl_db_config_path
         ln shared_puma_path, appl_puma_path
         ln shared_bundle_path, appl_bundle_path
-        ln app_root, current_root
         ln shared_rbenv_vars_path, appl_rbenv_vars_path
         log.result :done
       rescue Exception => e
         log.result :failed
         log.error e.message
       end
+    end
+    
+    def activate_revision
+      ln app_root, current_root
     end
     
     def restart_puma_manager?
@@ -139,28 +173,29 @@ module Sentoza
       end
     end
     
-    def bundle_update
-      log.info "Bundler update...."
+    def bundle(cmd, exception, result, context)
+      log.info context
       begin
         Dir.chdir(current_root) do
-          Bundler.clean_system('bundle install')
+          raise exception unless Bundler.clean_system(cmd)
         end
-        log.info ["Bundle done", :done]
+        log.info [result, :done]
       rescue Exception => e
         log.error [e.message, :failed]
+        raise DeployFailed
       end
     end
     
+    def bundle_update
+      bundle('bundle install', BundleFailed, 'Bundle done', 'Bundle install...')
+    end
+    
+    def db_migrate
+      bundle('bundle exec rake db:migrate', DbMigrateFailed, 'Db migrated', 'Db migrate...')
+    end
+    
     def assets_precompile
-      log.info "Precompile assets", true
-      begin
-        Dir.chdir(current_root) do
-          Bundler.clean_system('bundle exec rake assets:precompile')
-        end
-        log.info ["Assets precompiled", :done]
-      rescue Exception => e
-        log.error [e.message, :failed]
-      end
+      bundle('bundle exec rake assets:precompile', AssetsPrecompileFailed, 'Assets precompiled', 'Precompile assets...')
     end
     
   end

@@ -1,5 +1,6 @@
 require_relative '../helpers/util_helpers'
 require_relative '../helpers/config_helpers'
+require_relative '../helpers/application_helpers'
 
 module Sentoza
   module Generator
@@ -7,6 +8,7 @@ module Sentoza
       
       include UtilHelpers
       include ConfigHelpers
+      include ApplicationHelpers
       
       attr_accessor :application, :stage
       
@@ -28,9 +30,7 @@ module Sentoza
       end
       
       def initialize(application=nil, stage=nil)
-        settings = Settings::Base.new
-        @application  = application.is_a?(Sentoza::Settings::Application) ? application : settings.find(application)
-        @stage = stage.is_a?(Sentoza::Settings::Stage) ? stage : @application.find(stage)
+        init application, stage
       end
        
       def default(const)

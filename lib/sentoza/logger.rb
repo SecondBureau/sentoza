@@ -28,7 +28,8 @@ module Sentoza
       colors= {
         failed: :red,
         done: :blue,
-        skipped: :light_cyan
+        skipped: :light_cyan,
+        success: :green
       }
       puts "[#{code.to_s}]".colorize(colors[code])
     end
@@ -42,7 +43,7 @@ module Sentoza
         msg = msg[0]
         progress = true
       end
-      msg = "[#{prefix}]".colorize(colors[level]) + " #{msg}#{progress ? '...' : ''}".ljust(100)
+      msg = "[#{prefix}]".colorize(colors[level]) + " #{msg}#{progress && !res ? '...' : ''}".ljust(100)
       progress ? print(msg) : puts(msg)
       result res if res
     end

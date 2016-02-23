@@ -1,11 +1,15 @@
 require_relative '../settings'
 require_relative '../generator/applications'
 require_relative '../helpers/application_helpers'
+require_relative '../helpers/util_helpers'
+
+
 
 module Sentoza
   class Deploy < Sentoza::Command
     
     include ApplicationHelpers
+    include UtilHelpers
     
     attr_accessor :settings, :application, :stage
     attr_accessor :previous_revision
@@ -13,29 +17,38 @@ module Sentoza
     
     def self.run(arguments)
       options = parse_arguments(arguments)
-      Sentoza::Deploy.new(:charbon, :staging, options[:force]).run!
+      Sentoza::Deploy.new(options[:application], options[:stage], options[:force]).run!
     end
     
-    def initialize(application=nil, stage=nil, force=false)
-      @application  = application
-      @stage        = stage
-      @settings     = Settings.new
+    def initialize(application, stage, force=false)
+      init application, stage
       @force_build  = force
     end
     
     def run!
-      log.info "Deploying #{application}-#{stage}..."
-      checkout
-      @previous_revision = revision
-      fetch
-      if revision.eql?(previous_revision) && !force_build
-        log.warning "Sources are identical. Build is canceled"
-        exit 0
+      log.info "Deploying #{application.name}-#{stage.name}..."
+      begin
+        checkout
+        @previous_revision = revision
+        fetch
+        if revision.eql?(previous_revision) && !force_build && File.exist?(app_root)
+          log.warning "Sources are identical. Build is canceled"
+          exit 0
+        end
+        copy_tree
+        update_links
+        bundle_update
+        assets_precompile
+        db_migrate
+        activate_revision
+        log.info ["deployment successful. Revision #{revision} is now active", :success]
+      rescue DeployFailed => e
+        rename_failed_revision
+        log.warning e.message
+      rescue Exception => e
+        log.error e.message
       end
-      copy_tree
-      update_links
-      bundle_update
-      assets_precompile
+      
     end
     
     private
@@ -43,18 +56,17 @@ module Sentoza
     def fetch
       log.info "Fetching latest revision..."
       begin
-        remote = settings.github(application)[:remote]
-        branch = settings.stage(application, stage)[:branch]
+        remote = application.github.remote
         repo.remotes[remote].fetch({
           transfer_progress: lambda { |total_objects, indexed_objects, received_objects, local_objects, total_deltas, indexed_deltas, received_bytes|
             print "#{received_objects} / #{total_objects} objects \r"
           }
         })
-        distant_commit = repo.branches["#{remote}/#{branch}"].target
+        distant_commit = repo.branches["#{remote}/#{stage.branch}"].target
         repo.references.update(repo.head, distant_commit.oid)
         oid = repo.rev_parse_oid('HEAD')
         @revision = oid[0,7]
-        log.info ["'#{application}' updated", :done]
+        log.info ["'#{application.name}' updated", :done]
       rescue Exception => e
         log.error ["#{e.message}", :failed]
       end
@@ -66,11 +78,10 @@ module Sentoza
         opts.banner = "Usage: sentoza deploy [options]"
         opts.separator ""
         opts.on("-a", "--application=NAME", String,
-                "Name of the application to deploy.", "Default: None") { |v| options[:application] = v }
+                "Name of the application to deploy.", "Required") { |v| options[:application] = v }
         opts.on("-s", "--stage=STAGE", String,
-                "Stages for this application.", "Default: None") do |v| 
-                  options[:stages] ||= []
-                  options[:stages] << v.to_sym
+                "Stage to deploy.", "Required") do |v| 
+                  options[:stage] = v
                 end
         opts.separator ""
         opts.on("-f", "--force", TrueClass,
@@ -78,6 +89,9 @@ module Sentoza
         opts.on_tail("-h", "--help", "Shows this help message.") { puts opts; exit }
         
         opts.parse!(arguments)
+        
+        raise OptionParser::MissingArgument if options[:application].nil?
+        raise OptionParser::MissingArgument if options[:stage].nil?
       end
       options
     end
