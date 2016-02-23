@@ -6,6 +6,9 @@ require_relative '../helpers/util_helpers'
 
 
 module Sentoza
+  
+  class NothingToDo < ::StandardError; end
+  
   class Deploy < Sentoza::Command
     
     include ApplicationHelpers
@@ -31,10 +34,7 @@ module Sentoza
         checkout
         @previous_revision = revision
         fetch
-        if revision.eql?(previous_revision) && !force_build && File.exist?(app_root)
-          log.warning "Sources are identical. Build is canceled"
-          exit 0
-        end
+        raise NothingToDo, "Sources are identical. Build is canceled" if (revision.eql?(previous_revision) && !force_build && File.exist?(app_root))
         copy_tree
         update_links
         bundle_update
@@ -42,6 +42,8 @@ module Sentoza
         db_migrate
         activate_revision
         log.info ["deployment successful. Revision #{revision} is now active", :success]
+      rescue NothingToDo => e
+        log.warning e.message
       rescue DeployFailed => e
         rename_failed_revision
         log.warning e.message

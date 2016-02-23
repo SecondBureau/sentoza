@@ -1,3 +1,8 @@
 source 'https://ruby.taobao.org'
-gem 'rugged'
-gem 'colorize'
+
+group :cli do
+  gem 'rugged'
+  gem 'colorize'
+end
+
+gem 'sinatra'

@@ -3,7 +3,7 @@
 module Sentoza
   module ConfigHelpers
     
-    CONFIG_DIR = 'config'
+    CONFIG_DIR = 'apps/config'
     
     def self.included(base)
       base.extend(ClassMethods)

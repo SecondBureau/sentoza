@@ -5,8 +5,9 @@ module Sentoza
 Usage: sentoza generate [ARGS]
 Available generators:
  settings         generate config/sentoza.yml
- nginx          generate /etc/nginx/sites-available/[application]-[stage]
- applications   clone and install rails applications
+ nginx            generate /etc/nginx/sites-available/[application]-[stage]
+ applications     clone and install rails applications
+ server           install sentoza server
  
 EOT
 
@@ -23,6 +24,11 @@ EOT
     def self.applications(arguments)
       require_relative '../generator/applications'
       Sentoza::Generator::Applications.run arguments
+    end
+    
+    def self.server(arguments)
+      require_relative '../generator/server'
+      Sentoza::Generator::Server.new.run
     end
     
     def self.help
