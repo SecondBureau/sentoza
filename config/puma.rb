@@ -1,7 +1,7 @@
 root = "#{Dir.getwd}"
 
 bind "unix://#{root}/tmp/puma/socket"
-stdout_redirect "#{root}/log/puma.stdout.log", "#{shared_dir}/log/puma.stderr.log", true
+stdout_redirect "#{root}/log/puma.stdout.log", "#{root}/log/puma.stderr.log", true
 pidfile "#{root}/tmp/puma/pid"
 state_path "#{root}/tmp/puma/state"
 rackup "#{root}/config.ru"

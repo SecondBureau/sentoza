@@ -2,6 +2,7 @@ GEM
   remote: https://ruby.taobao.org/
   specs:
     colorize (0.7.7)
+    puma (2.16.0)
     rack (1.6.4)
     rack-protection (1.5.3)
       rack
@@ -17,5 +18,6 @@ PLATFORMS
 
 DEPENDENCIES
   colorize
+  puma
   rugged
   sinatra

@@ -6,3 +6,4 @@ group :cli do
 end
 
 gem 'sinatra'
+gem 'puma'

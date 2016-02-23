@@ -25,7 +25,7 @@ server {
 
   location @sentoza {
     include proxy_params;
-    proxy_pass http://app;
+    proxy_pass http://sentoza;
   }
   
   error_page 500 502 503 504 /500.html;
@@ -46,7 +46,7 @@ EOT
         mk_config_file
         sites_available = Sentoza::Generator::NGinx::SITES_AVAILABLE
         sites_enabled   = Sentoza::Generator::NGinx::SITES_ENABLED
-        puts "echo '#{root}' > /etc/puma.conf"
+        puts "echo '#{root}' >> /etc/puma.conf"
         puts "cp #{File.join(root, 'tmp', 'sentoza')} #{sites_available}"
         puts "ln -s ../#{File.basename(sites_available)}/sentoza #{File.join(sites_enabled, 'sentoza')}"
         puts "restart puma-manager"
