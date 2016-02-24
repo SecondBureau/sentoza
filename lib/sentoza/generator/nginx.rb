@@ -18,6 +18,8 @@ server {
   server_name {{VHOST}};
 
   root {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/current;
+  access_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.access.log;
+  error_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.error.log info;
 
   try_files $uri/index.html $uri @{{APPLICATION}}_{{STAGE}};
 
@@ -52,8 +54,11 @@ EOT
                       options[:stages] << v.to_sym
                     end
             opts.separator ""
-            opts.on("-s", "--simulate", 
+            opts.on("-s", "--simulate", TrueClass
                     "Does not install files in /etc/nginx/sites-available/", "Default: false") { |v| options[:simulate] = v }
+            opts.on("-i", "--install", TrueClass
+                    "Only install files in /etc/nginx/sites-available/", "Default: false") { |v| options[:install_only] = v }
+            
             opts.on("-e", "--enable", 
                     "enable vhost", "Default: active param") { |v| options[:enable] = v }
             opts.separator ""
@@ -69,7 +74,7 @@ EOT
       
       def run!(options)
         init_repo unless check_repo
-        mk_config_file 
+        mk_config_file unless options[:install_only]
         unless options[:simulate]
           install_file
           if options[:enable] || stage.active
