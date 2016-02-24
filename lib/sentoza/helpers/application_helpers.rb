@@ -114,13 +114,28 @@ module Sentoza
             print "#{received_objects} / #{total_objects} objects \r"
           }
         })
-        distant_commit = repo.branches["#{remote}/#{stage.branch}"].target
-        repo.references.update(repo.head, distant_commit.oid)
-        oid = repo.rev_parse_oid('HEAD')
-        @revision = oid[0,7]
+        #distant_commit = repo.branches["#{remote}/#{stage.branch}"].target
+        #repo.references.update(repo.head, distant_commit.oid)
+        #oid = repo.rev_parse_oid('HEAD')
+        #@revision = oid[0,7]
         log.info ["'#{application.name}' updated", :done]
       rescue Exception => e
         log.error ["#{e.message}", :failed]
+      end
+    end
+    
+    def merge
+      log.info "Merging..."
+      begin
+        Dir.chdir(clone_path) do
+          Bundler.clean_system "git merge #{application.github.remote}/#{stage.branch}"
+        end
+        oid = repo.rev_parse_oid('HEAD')
+        @revision = oid[0,7]
+        log.result :done
+      rescue Exception => e
+        log.result :failed
+        log.error e.message
       end
     end
     

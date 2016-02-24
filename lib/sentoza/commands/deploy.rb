@@ -34,6 +34,7 @@ module Sentoza
         checkout
         @previous_revision = revision
         fetch
+        merge
         raise NothingToDo, "Sources are identical. Build is canceled" if (revision.eql?(previous_revision) && !force_build && File.exist?(app_root))
         copy_tree
         update_links
