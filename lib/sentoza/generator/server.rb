@@ -8,16 +8,16 @@ module Sentoza
       TEMPLATE = <<-EOT
       
 upstream sentoza {
-  server unix:///{{root}}/tmp/puma/socket;
+  server unix:{{root}}/tmp/puma/socket;
 }
 
 server {
   listen 80;
   server_name sentoza.cid.siz.yt;
 
-  root /{{root}}/public;
-  access_log /{{root}}/log/nginx.access.log;
-  error_log /{{root}}/log/nginx.error.log info;
+  root {{root}}/public;
+  access_log {{root}}/log/nginx.access.log;
+  error_log {{root}}/log/nginx.error.log info;
 
   location / {
     try_files $uri/index.html $uri @sentoza;

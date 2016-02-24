@@ -10,7 +10,7 @@ module Sentoza
       TEMPLATE = <<-EOT
 upstream {{APPLICATION}}_{{STAGE}} {
   # Path to Puma SOCK file, as defined in app/config/puma.rb
-  server unix: {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/sockets/puma.sock fail_timeout=0;
+  server unix:{{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/sockets/puma.sock fail_timeout=0;
 }
 
 server {
