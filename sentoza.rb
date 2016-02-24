@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'sinatra'
+require 'json'
 configure { set :server, :puma }
 
 module Sentoza
