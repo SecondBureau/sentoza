@@ -146,9 +146,21 @@ module Sentoza
         oid = repo.rev_parse_oid('HEAD')
         @revision = oid[0,7]
         log.result :done
+      rescue Rugged::ReferenceError 
+        checkout_b
       rescue Exception => e
         log.result :failed
         log.error e.message
+      end
+    end
+    
+    def checkout_b
+      begin
+        Dir.chdir(clone_path) do
+          Bundler.clean_system "git checkout #{stage.branch}"
+        end
+      rescue
+        raise "'git checkout #{stage.branch}' failed"
       end
     end
     
