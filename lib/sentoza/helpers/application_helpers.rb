@@ -99,6 +99,14 @@ module Sentoza
       File.join(shared_dir, "rbenv-vars")
     end
     
+    def appl_assets_path
+      File.join(app_root, 'public', 'assets')
+    end
+    
+    def shared_assets_path
+      File.join(shared_dir, 'assets')
+    end
+    
     def init(application, stage)
       settings = Settings::Base.new
       @application  = application.is_a?(Sentoza::Settings::Application) ? application : settings.find(application)
@@ -189,6 +197,7 @@ module Sentoza
         ln shared_puma_path, appl_puma_path
         ln shared_bundle_path, appl_bundle_path
         ln shared_rbenv_vars_path, appl_rbenv_vars_path
+        ln shared_assets_path, appl_assets_path
         log.result :done
       rescue Exception => e
         log.result :failed
