@@ -7,3 +7,4 @@ end
 
 gem 'sinatra'
 gem 'puma'
+gem 'json'
