@@ -5,6 +5,9 @@ require_relative '../helpers/application_helpers'
 
 module Sentoza
   module Generator
+    
+    class RepoExists < ::StandardError; end
+  
     class Applications < Sentoza::Generator::Base
       
       DATABASE_TPL = <<-EOT      
@@ -89,6 +92,9 @@ EOT
                       options[:stages] << v.to_sym
                     end
             opts.separator ""
+            
+            opts.on("-f", "--fetch", TrueClass,
+                    "Will fetch the latest if repo exists.") { |v| options[:fetch] = v }
          
             opts.on_tail("-h", "--help", "Shows this help message.") { puts opts; exit }
           
@@ -106,7 +112,15 @@ EOT
       end
       
       def run!(options)
-        clone
+        begin
+          clone
+        rescue RepoExists
+          if options[:fetch]
+            fetch
+          else
+            log.warning ["'#{application.github.repository}' already exists in '#{clone_path}'", :skipped]
+          end
+        end
         FileUtils.mkdir_p stage_path
         checkout
         copy_tree
@@ -133,7 +147,7 @@ private
           })
           log.info ["'#{github_repository}' cloned", :done]
         else
-          log.warning ["'#{github_repository}' already exists in '#{clone_path}'", :skipped]
+          raise RepoExists
         end
       end
       

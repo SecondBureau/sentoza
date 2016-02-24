@@ -105,6 +105,25 @@ module Sentoza
       @stage = stage.is_a?(Sentoza::Settings::Stage) ? stage : @application.find(stage)
     end
     
+    def fetch
+      log.info "Fetching latest revision..."
+      begin
+        remote = application.github.remote
+        repo.remotes[remote].fetch({
+          transfer_progress: lambda { |total_objects, indexed_objects, received_objects, local_objects, total_deltas, indexed_deltas, received_bytes|
+            print "#{received_objects} / #{total_objects} objects \r"
+          }
+        })
+        distant_commit = repo.branches["#{remote}/#{stage.branch}"].target
+        repo.references.update(repo.head, distant_commit.oid)
+        oid = repo.rev_parse_oid('HEAD')
+        @revision = oid[0,7]
+        log.info ["'#{application.name}' updated", :done]
+      rescue Exception => e
+        log.error ["#{e.message}", :failed]
+      end
+    end
+    
     def checkout
       log.info "Checkout branch", true
       begin
@@ -176,7 +195,7 @@ module Sentoza
     def bundle(cmd, exception, result, context)
       log.info context
       begin
-        Dir.chdir(current_root) do
+        Dir.chdir(app_root) do
           raise exception unless Bundler.clean_system(cmd)
         end
         log.info [result, :done]

@@ -54,25 +54,6 @@ module Sentoza
     end
     
     private
-    
-    def fetch
-      log.info "Fetching latest revision..."
-      begin
-        remote = application.github.remote
-        repo.remotes[remote].fetch({
-          transfer_progress: lambda { |total_objects, indexed_objects, received_objects, local_objects, total_deltas, indexed_deltas, received_bytes|
-            print "#{received_objects} / #{total_objects} objects \r"
-          }
-        })
-        distant_commit = repo.branches["#{remote}/#{stage.branch}"].target
-        repo.references.update(repo.head, distant_commit.oid)
-        oid = repo.rev_parse_oid('HEAD')
-        @revision = oid[0,7]
-        log.info ["'#{application.name}' updated", :done]
-      rescue Exception => e
-        log.error ["#{e.message}", :failed]
-      end
-    end
 
     def self.parse_arguments(arguments)
       options = {}
