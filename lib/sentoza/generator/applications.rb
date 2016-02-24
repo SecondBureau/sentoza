@@ -155,6 +155,9 @@ private
         log.info "Create shared directory", true
         begin
           FileUtils.mkdir_p File.join(app_root, SHARED_PATH)
+          FileUtils.mkdir_p File.join(app_root, SHARED_PATH, 'log')
+          FileUtils.mkdir_p File.join(app_root, SHARED_PATH, 'pids')
+          FileUtils.mkdir_p File.join(app_root, SHARED_PATH, '')
           log.result :done
         rescue Exception => e
           log.result :failed
