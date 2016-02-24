@@ -54,9 +54,9 @@ EOT
                       options[:stages] << v.to_sym
                     end
             opts.separator ""
-            opts.on("-s", "--simulate", TrueClass
+            opts.on("-s", "--simulate", TrueClass,
                     "Does not install files in /etc/nginx/sites-available/", "Default: false") { |v| options[:simulate] = v }
-            opts.on("-i", "--install", TrueClass
+            opts.on("-i", "--install", TrueClass,
                     "Only install files in /etc/nginx/sites-available/", "Default: false") { |v| options[:install_only] = v }
             
             opts.on("-e", "--enable", 
@@ -129,19 +129,47 @@ EOT
       end
       
       def install_file
-        FileUtils.cp config_path, nginx_path
+        log.info "install files", true
+        begin
+          FileUtils.cp config_path, nginx_path
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
       def enable
-        ln nginx_path, File.join(SITES_ENABLED, filename)
+        log.info "enable appplication", true
+        begin
+          ln nginx_path, File.join(SITES_ENABLED, filename)
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
       def disable
-        FileUtils.rm File.join(SITES_ENABLED, filename)
+        log.info "Disable application", true
+        begin
+          FileUtils.rm File.join(SITES_ENABLED, filename)
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
       def restart
-        `service nginx restart`
+        log.info "Restart NGinx", true
+        begin
+          `service nginx restart`
+          log.result :done
+        rescue Exception => e
+          log.result :failed
+          log.error e.message
+        end
       end
       
       
