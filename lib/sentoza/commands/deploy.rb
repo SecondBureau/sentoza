@@ -20,12 +20,16 @@ module Sentoza
     
     def self.run(arguments)
       options = parse_arguments(arguments)
-      Sentoza::Deploy.new(options[:application], options[:stage], options[:force]).run!
+      Sentoza::Deploy.new(options).run!
     end
     
-    def initialize(application, stage, force=false)
-      init application, stage
-      @force_build  = force
+    def initialize(*args)
+      if args && args[0].is_a?(Hash)
+        init args[0]
+        @force_build  = args[0][:force] || false
+      else
+        super args
+      end
     end
     
     def run!
@@ -42,6 +46,7 @@ module Sentoza
         assets_precompile
         #db_migrate
         activate_revision
+        restart_puma_manager
         log.info ["deployment successful. Revision #{revision} is now active", :success]
       rescue NothingToDo => e
         log.warning e.message
@@ -51,7 +56,14 @@ module Sentoza
       rescue Exception => e
         log.error e.message
       end
-      
+    end
+    
+    def cron
+      Dir[File.join(cron_path, "*.restart")].each do |file|
+        application, stage = File.basename(file, '.restart').split('-')
+        FileUtils.rm file
+        self.class.new({application: application, stage: stage}).restart_puma_manager(true)
+      end
     end
     
     private
@@ -64,9 +76,10 @@ module Sentoza
         opts.on("-a", "--application=NAME", String,
                 "Name of the application to deploy.", "Required") { |v| options[:application] = v }
         opts.on("-s", "--stage=STAGE", String,
-                "Stage to deploy.", "Required") do |v| 
-                  options[:stage] = v
-                end
+                "Stage to deploy.", "Either branch or stage is required.") { |v| options[:stage] = v }
+        opts.on("-b", "--branch=BRANCH", String,
+                "Branch to deploy.", "Either branch or stage is required.") { |v| options[:branch] = v }
+                
         opts.separator ""
         opts.on("-f", "--force", TrueClass,
                 "Force rebuild even if revision hasn't changed.", "Default: False") { |v| options[:force] = v }
@@ -75,7 +88,7 @@ module Sentoza
         opts.parse!(arguments)
         
         raise OptionParser::MissingArgument if options[:application].nil?
-        raise OptionParser::MissingArgument if options[:stage].nil?
+        raise OptionParser::MissingArgument if (options[:stage].nil? && options[:branch].nil?)
       end
       options
     end

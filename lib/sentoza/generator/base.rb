@@ -30,7 +30,7 @@ module Sentoza
       end
       
       def initialize(application=nil, stage=nil)
-        init application, stage
+        init({application: application, stage: stage})
       end
        
       def default(const)

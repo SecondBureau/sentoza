@@ -15,7 +15,6 @@ module Sentoza
 
     def self.run(task_name, argv)
       command_name = command_name_for(task_name)
-
       if command = command_for(command_name)
         command.new(argv).run(command_name)
       else
@@ -70,3 +69,5 @@ module Sentoza
       end
   end
 end
+
+require_relative 'commands/deploy'

@@ -43,7 +43,7 @@ module Sentoza
         msg = msg[0]
         progress = true
       end
-      msg = "[#{prefix}]".colorize(colors[level]) + " #{msg}#{progress && !res ? '...' : ''}".ljust(100)
+      msg = "#{Time.now.strftime('%b %d %T')} sentoza: " + "[#{prefix}]".colorize(colors[level]) + " #{msg}#{progress && !res ? '...' : ''}".ljust(100)
       progress ? print(msg) : puts(msg)
       result res if res
     end

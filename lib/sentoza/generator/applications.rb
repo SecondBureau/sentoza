@@ -159,6 +159,7 @@ private
           FileUtils.mkdir_p File.join(app_root, SHARED_PATH, 'pids')
           FileUtils.mkdir_p File.join(app_root, SHARED_PATH, 'sockets')
           FileUtils.mkdir_p File.join(app_root, SHARED_PATH, 'assets')
+          FileUtils.mkdir_p File.join(app_root, 'tmp')
           log.result :done
         rescue Exception => e
           log.result :failed

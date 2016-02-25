@@ -10,6 +10,11 @@ module Sentoza
         @github = Github.new
         @stages = {}
       end
+      def find_by_branch(branch)
+        stage = stages.find {|k, s| s.branch.eql?(branch)}
+        raise(StageNotFound, "Stage '#{stage}' can not be found.") if stage.nil?
+        stage[1]
+      end
       def find(stage)
         raise(StageNotFound, "Stage '#{stage}' can not be found.") unless stages.has_key?(stage.to_sym)
         stages[stage.to_sym]

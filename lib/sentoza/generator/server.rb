@@ -51,6 +51,7 @@ EOT
         puts "ln -s ../#{File.basename(sites_available)}/sentoza #{File.join(sites_enabled, 'sentoza')}"
         puts "restart puma-manager"
         puts "service nginx restart"
+        puts "echo '*/2 * * * * root #{root}/bin/sentoza cron >> #{root}/log/cron.log' > /etc/cron.d/sentoza"
       end
       
       private

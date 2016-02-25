@@ -30,6 +30,7 @@ module Sentoza
     SHARED_PATH     = '../shared' # relative to rails application root
     DATABASE_CONFIG = 'database.yml'
     PUMA_CONFIG     = 'puma.rb'
+    CRON_DIR        = "tmp"
     
     attr_accessor :revision
     attr_accessor :restart
@@ -40,6 +41,10 @@ module Sentoza
     
     def clone_path
       File.join(apps_path, application.name.to_s, CLONE_DIR)
+    end
+    
+    def cron_path
+      File.expand_path File.join(apps_path, CRON_DIR)
     end
     
     def repo
@@ -107,10 +112,17 @@ module Sentoza
       File.join(shared_dir, 'assets')
     end
     
-    def init(application, stage)
+    def init(params={})
       settings = Settings::Base.new
+      application = params[:application]
+      stage = params[:stage]
+      branch = params[:branch]
       @application  = application.is_a?(Sentoza::Settings::Application) ? application : settings.find(application)
-      @stage = stage.is_a?(Sentoza::Settings::Stage) ? stage : @application.find(stage)
+      @stage = @application.find_by_branch(branch) if branch
+      if stage
+        @stage = stage.is_a?(Sentoza::Settings::Stage) ? stage : @application.find(stage)
+      end
+      
     end
     
     def fetch
@@ -207,24 +219,38 @@ module Sentoza
     
     def activate_revision
       ln app_root, current_root
+      @restart = true
     end
     
     def restart_puma_manager?
       restart
     end
     
-    def restart_puma_manager
-      log.info "Restarting Puma Manager", true
+    def restart_puma_manager(force=nil)
+      log.info "Restarting Puma Manager.", true
       begin
-        if restart_puma_manager?
-          `restart puma-manager`
-          log.result :done
+        if force || restart_puma_manager?
+          puts
+          cmd = "stop puma app=#{current_root}"
+          raise 'Bundler failed' unless Bundler.clean_system(cmd)
+          cmd = "start puma app=#{current_root}"
+          raise 'Bundler failed' unless Bundler.clean_system(cmd)
+          log.info ["Puma restart", :done]
         else
           log.result :skipped
         end
       rescue Exception => e
-        log.result :failed
-        log.error e.message
+        sudo_restart unless force
+        log.error ["Puma restart", :failed]
+        log.debug  cmd
+      end
+    end
+    
+    def sudo_restart
+      FileUtils.mkdir_p cron_path unless File.exist? cron_path
+      filename = File.join cron_path, "#{application.name}-#{stage.name}.restart"
+      File.open(filename,"w") do |file|
+        file.write "restart"
       end
     end
     

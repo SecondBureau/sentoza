@@ -2,6 +2,7 @@
 
 require 'sinatra'
 require 'json'
+
 configure { set :server, :puma }
 
 module Sentoza
@@ -13,7 +14,13 @@ module Sentoza
     
     post '/hooks/github' do
       push = JSON.parse(request.body.read)
-      puts "I got some JSON: #{push.inspect}"
+      application = push["repository"]["name"]
+      branch = File.basename(push["ref"])
+      app_root = File.expand_path(File.dirname(__FILE__))
+      cmd = "bin/sentoza deploy -a #{application} -b #{branch} >> #{File.join(app_root, "log", "github_hooks.log")} &"
+      Dir.chdir(app_root) do
+        Bundler.clean_system cmd
+      end
     end
 
     run! if app_file == $0
