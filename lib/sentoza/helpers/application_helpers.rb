@@ -219,6 +219,7 @@ module Sentoza
         ln shared_bundle_path, appl_bundle_path
         ln shared_rbenv_vars_path, appl_rbenv_vars_path
         ln shared_assets_path, appl_assets_path
+        ln shared_media_path, appl_media_path
         log.result :done
       rescue Exception => e
         log.result :failed
