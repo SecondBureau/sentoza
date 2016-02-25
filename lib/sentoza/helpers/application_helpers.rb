@@ -31,6 +31,7 @@ module Sentoza
     DATABASE_CONFIG = 'database.yml'
     PUMA_CONFIG     = 'puma.rb'
     CRON_DIR        = "tmp"
+    MEDIA_DIR       = "media"
     
     attr_accessor :revision
     attr_accessor :restart
@@ -86,6 +87,14 @@ module Sentoza
     
     def shared_puma_path
       File.join(shared_dir, PUMA_CONFIG)
+    end
+    
+    def appl_media_path
+      File.join(app_root, 'public', MEDIA_DIR)
+    end
+    
+    def shared_media_path
+      File.join(shared_dir, MEDIA_DIR)
     end
     
     def appl_bundle_path
