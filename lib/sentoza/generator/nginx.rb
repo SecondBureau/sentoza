@@ -23,6 +23,8 @@ server {
   
   location ~ ^/assets/ {
     gzip_static on;
+    gzip_vary on;
+    charset utf-8;
     expires 1y;
     add_header Cache-Control public;
     add_header ETag "";

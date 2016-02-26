@@ -217,7 +217,8 @@ private
             file.puts "DB_PORT=#{stage.db[:port]}"
             file.puts "SECRET_KEY_BASE=#{SecureRandom.hex(64)}"
             file.puts "RAILS_ENV=production"
-            file.puts "RAILS_SERVE_STATIC_FILES=true"
+            file.puts "RAILS_SERVE_STATIC_FILES="
+            file.puts "ASSETS_VERSION=1.0"
           end
           log.result :done
         rescue Exception => e
