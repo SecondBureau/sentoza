@@ -268,13 +268,17 @@ module Sentoza
       log.info context
       begin
         Dir.chdir(app_root) do
-          raise exception unless Bundler.clean_system(cmd)
+          raise exception unless Bundler.clean_system("#{rbenv_init} #{cmd}")
         end
         log.info [result, :done]
       rescue Exception => e
         log.error [e.message, :failed]
         raise DeployFailed
       end
+    end
+    
+    def rbenv_init
+      'export PATH=/home/deploy/.rbenv/shims:/usr/sbin/rbenv:$PATH; eval "$(rbenv init -)"; '
     end
     
     def bundle_update

@@ -22,6 +22,7 @@ server {
   error_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.error.log info;
   
   location ~ ^/assets/ {
+    gzip_static on;
     expires 1y;
     add_header Cache-Control public;
     add_header ETag "";

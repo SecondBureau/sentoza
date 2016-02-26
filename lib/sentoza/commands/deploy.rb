@@ -44,7 +44,7 @@ module Sentoza
         update_links
         bundle_update
         assets_precompile
-        #db_migrate
+        db_migrate
         activate_revision
         restart_puma_manager
         log.info ["deployment successful. Revision #{revision} is now active", :success]
