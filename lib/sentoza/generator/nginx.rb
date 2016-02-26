@@ -17,7 +17,7 @@ server {
   listen 80;
   server_name {{VHOST}};
 
-  root {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/current;
+  root {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/current/public;
   access_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.access.log;
   error_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.error.log info;
   
