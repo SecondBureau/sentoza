@@ -20,6 +20,13 @@ server {
   root {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/current;
   access_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.access.log;
   error_log {{APP_ROOT}}/apps/{{APPLICATION}}/{{STAGE}}/shared/log/nginx.error.log info;
+  
+  location ~ ^/assets/ {
+    expires 1y;
+    add_header Cache-Control public;
+    add_header ETag "";
+    break;
+  }
 
   try_files $uri/index.html $uri @{{APPLICATION}}_{{STAGE}};
 
@@ -29,6 +36,8 @@ server {
       proxy_set_header Host $http_host;
       proxy_redirect off;
   }
+  
+
 
   error_page 500 502 503 504 /500.html;
   client_max_body_size 4G;
