@@ -46,6 +46,7 @@ module Sentoza
         assets_precompile
         db_migrate
         activate_revision
+        clean_assets
         restart_puma_manager
         log.info ["deployment successful. Revision #{revision} is now active", :success]
       rescue NothingToDo => e

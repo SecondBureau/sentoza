@@ -13,6 +13,12 @@ module Sentoza
       end
     end 
     
+    class AssetsCleanFailed < ::StandardError
+      def message
+        'rake task `assets:clean` failed.'
+      end
+    end 
+    
     class DbMigrateFailed < ::StandardError
       def message
         'rake task `db:migrate` failed.'
@@ -291,6 +297,10 @@ module Sentoza
     
     def assets_precompile
       bundle('bundle exec rake assets:precompile', AssetsPrecompileFailed, 'Assets precompiled', 'Precompile assets...')
+    end
+    
+    def clean_assets
+      bundle 'bundle exec rake assets:clean', AssetsCleanFailed, 'Cleaning old assets failed', 'Cleaning assets...'
     end
     
   end
