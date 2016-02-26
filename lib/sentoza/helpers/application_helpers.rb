@@ -270,11 +270,11 @@ module Sentoza
       end
     end
     
-    def bundle(cmd, exception, result, context)
+    def bundle(cmd, exception, result, context, init_rbenv=false)
       log.info context
       begin
         Dir.chdir(app_root) do
-          raise exception unless Bundler.clean_system("#{rbenv_init} #{cmd}")
+          raise exception unless Bundler.clean_system("#{rbenv_init if init_rbenv} #{cmd}")
         end
         log.info [result, :done]
       rescue Exception => e
@@ -288,15 +288,15 @@ module Sentoza
     end
     
     def bundle_update
-      bundle('bundle install', BundleFailed, 'Bundle done', 'Bundle install...')
+      bundle 'bundle install', BundleFailed, 'Bundle done', 'Bundle install...'
     end
     
     def db_migrate
-      bundle('bundle exec rake db:migrate', DbMigrateFailed, 'Db migrated', 'Db migrate...')
+      bundle 'bundle exec rake db:migrate', DbMigrateFailed, 'Db migrated', 'Db migrate...', true
     end
     
     def assets_precompile
-      bundle('bundle exec rake assets:precompile', AssetsPrecompileFailed, 'Assets precompiled', 'Precompile assets...')
+      bundle 'bundle exec rake assets:precompile', AssetsPrecompileFailed, 'Assets precompiled', 'Precompile assets...'
     end
     
     def clean_assets
