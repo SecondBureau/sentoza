@@ -300,7 +300,7 @@ module Sentoza
     end
     
     def clean_assets
-      bundle 'bundle exec rake assets:clean', AssetsCleanFailed, 'Cleaning old assets failed', 'Cleaning assets...'
+      bundle 'bundle exec rake assets:clean', AssetsCleanFailed, 'Old assets cleaned', 'Cleaning assets...'
     end
     
   end
