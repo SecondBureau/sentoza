@@ -288,7 +288,7 @@ module Sentoza
     end
     
     def bundle_update
-      bundle 'bundle update', BundleFailed, 'Bundle done', 'Bundle install...'
+      bundle 'bundle update', BundleFailed, 'Bundle done', 'Bundle update...'
     end
     
     def db_migrate
